@@ -1,10 +1,9 @@
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { HeaderAuth } from './HeaderAuth'
 import { signOut } from '@/lib/auth-client'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function Header() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const handleLogout = async () => {
@@ -25,11 +24,18 @@ export default function Header() {
           </Link>
           <nav className="flex items-center gap-6">
             <Link
-              to="/"
+              to="/quran"
               className="text-gray-300 hover:text-white transition-colors"
               activeProps={{ className: "text-cyan-400" }}
             >
-              Home
+              Quran
+            </Link>
+            <Link
+              to="/dashboard"
+              className="text-gray-300 hover:text-white transition-colors"
+              activeProps={{ className: "text-cyan-400" }}
+            >
+              Dashboard
             </Link>
             <HeaderAuth onLogout={handleLogout} />
           </nav>
