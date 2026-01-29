@@ -9,9 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as QuranRouteImport } from './routes/quran'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as QuranIndexRouteImport } from './routes/quran/index'
 import { Route as QuranSurahRouteImport } from './routes/quran/$surah'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
@@ -24,11 +24,6 @@ import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr
 import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
 import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ssr.data-only'
 
-const QuranRoute = QuranRouteImport.update({
-  id: '/quran',
-  path: '/quran',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -39,10 +34,15 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuranIndexRoute = QuranIndexRouteImport.update({
+  id: '/quran/',
+  path: '/quran/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QuranSurahRoute = QuranSurahRouteImport.update({
-  id: '/$surah',
-  path: '/$surah',
-  getParentRoute: () => QuranRoute,
+  id: '/quran/$surah',
+  path: '/quran/$surah',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
   id: '/auth/register',
@@ -98,10 +98,10 @@ const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
-  '/quran': typeof QuranRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/quran/$surah': typeof QuranSurahRoute
+  '/quran/': typeof QuranIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -114,10 +114,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
-  '/quran': typeof QuranRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/quran/$surah': typeof QuranSurahRoute
+  '/quran': typeof QuranIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -131,10 +131,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
-  '/quran': typeof QuranRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/quran/$surah': typeof QuranSurahRoute
+  '/quran/': typeof QuranIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -149,10 +149,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
-    | '/quran'
     | '/auth/login'
     | '/auth/register'
     | '/quran/$surah'
+    | '/quran/'
     | '/api/auth/$'
     | '/demo/api/names'
     | '/demo/start/api-request'
@@ -165,10 +165,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/dashboard'
-    | '/quran'
     | '/auth/login'
     | '/auth/register'
     | '/quran/$surah'
+    | '/quran'
     | '/api/auth/$'
     | '/demo/api/names'
     | '/demo/start/api-request'
@@ -181,10 +181,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/dashboard'
-    | '/quran'
     | '/auth/login'
     | '/auth/register'
     | '/quran/$surah'
+    | '/quran/'
     | '/api/auth/$'
     | '/demo/api/names'
     | '/demo/start/api-request'
@@ -198,9 +198,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
-  QuranRoute: typeof QuranRouteWithChildren
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
+  QuranSurahRoute: typeof QuranSurahRoute
+  QuranIndexRoute: typeof QuranIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
   DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
@@ -213,13 +214,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/quran': {
-      id: '/quran'
-      path: '/quran'
-      fullPath: '/quran'
-      preLoaderRoute: typeof QuranRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -234,12 +228,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/quran/': {
+      id: '/quran/'
+      path: '/quran'
+      fullPath: '/quran/'
+      preLoaderRoute: typeof QuranIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/quran/$surah': {
       id: '/quran/$surah'
-      path: '/$surah'
+      path: '/quran/$surah'
       fullPath: '/quran/$surah'
       preLoaderRoute: typeof QuranSurahRouteImport
-      parentRoute: typeof QuranRoute
+      parentRoute: typeof rootRouteImport
     }
     '/auth/register': {
       id: '/auth/register'
@@ -314,22 +315,13 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface QuranRouteChildren {
-  QuranSurahRoute: typeof QuranSurahRoute
-}
-
-const QuranRouteChildren: QuranRouteChildren = {
-  QuranSurahRoute: QuranSurahRoute,
-}
-
-const QuranRouteWithChildren = QuranRoute._addFileChildren(QuranRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
-  QuranRoute: QuranRouteWithChildren,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
+  QuranSurahRoute: QuranSurahRoute,
+  QuranIndexRoute: QuranIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
   DemoStartApiRequestRoute: DemoStartApiRequestRoute,
