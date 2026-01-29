@@ -23,7 +23,7 @@ export default function Header() {
   const closeMobileMenu = () => setMobileMenuOpen(false)
 
   return (
-    <header className="border-b border-slate-300 dark:border-slate-700 bg-slate-100/50 dark:bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <Link to="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
@@ -35,21 +35,21 @@ export default function Header() {
           <nav className="hidden md:flex items-center gap-6">
             <Link
               to="/quran"
-              className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+              className="text-slate-600 dark:text-gray-200 hover:text-slate-900 dark:hover:text-stone-100 transition-colors"
               activeProps={{ className: "text-cyan-600 dark:text-cyan-400" }}
             >
               Quran
             </Link>
             <Link
               to="/dashboard"
-              className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+              className="text-slate-600 dark:text-gray-200 hover:text-slate-900 dark:hover:text-stone-100 transition-colors"
               activeProps={{ className: "text-cyan-600 dark:text-cyan-400" }}
             >
               Dashboard
             </Link>
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              className="p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               aria-label="Toggle theme"
               title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
@@ -66,7 +66,7 @@ export default function Header() {
           <div className="md:hidden flex items-center gap-2">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              className="p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               aria-label="Toggle theme"
               title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
@@ -78,7 +78,7 @@ export default function Header() {
             </button>
             <button
               type="button"
-              className="inline-flex items-center justify-center p-2 rounded-md text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-cyan-500"
+              className="inline-flex items-center justify-center p-2 rounded-md text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200 hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-cyan-500"
               aria-expanded={mobileMenuOpen}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -101,11 +101,11 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-300 dark:border-slate-700 bg-slate-100/95 dark:bg-slate-900/95 backdrop-blur-sm">
+        <div className="md:hidden border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/95 backdrop-blur-sm">
           <div className="px-4 pt-2 pb-4 space-y-1">
             <Link
               to="/quran"
-              className="block px-3 py-3 rounded-md text-base font-medium text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              className="block px-3 py-3 rounded-md text-base font-medium text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               activeProps={{ className: "text-cyan-600 dark:text-cyan-400 bg-slate-200 dark:bg-slate-700" }}
               onClick={closeMobileMenu}
             >
@@ -113,13 +113,13 @@ export default function Header() {
             </Link>
             <Link
               to="/dashboard"
-              className="block px-3 py-3 rounded-md text-base font-medium text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              className="block px-3 py-3 rounded-md text-base font-medium text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               activeProps={{ className: "text-cyan-600 dark:text-cyan-400 bg-slate-200 dark:bg-slate-700" }}
               onClick={closeMobileMenu}
             >
               Dashboard
             </Link>
-            <div className="px-3 py-3 border-t border-slate-300 dark:border-slate-700 mt-2 pt-4">
+            <div className="px-3 py-3 border-t border-slate-200 dark:border-slate-700 mt-2 pt-4">
               <HeaderAuth onLogout={handleLogout} />
             </div>
           </div>

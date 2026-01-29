@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Circle, CircleDot, CheckCircle2, Clock } from "lucide-react"
 import type { ProgressStatus } from "@/db/queries"
 import React, { useRef, useEffect, useState, useCallback } from "react"
+import { useToast } from "@/components/ui/toast"
 
 // Verses per page
 const VERSES_PER_PAGE = 10
@@ -66,13 +67,20 @@ function getNextStatus(currentStatus: ProgressStatus): ProgressStatus {
 interface QuranSearch {
   page?: number
   mode?: "verses" | "reading"
+  filter?: ProgressStatus | "all"
 }
 
 export const Route = createFileRoute("/quran/$surah")({
   validateSearch: (search: Record<string, unknown>): QuranSearch => {
+    const validFilters = ["all", "not_started", "in_progress", "memorized", "revised"]
+    const filter = typeof search.filter === "string" && validFilters.includes(search.filter)
+      ? search.filter as ProgressStatus | "all"
+      : "all"
+
     return {
       page: typeof search.page === "number" ? search.page : 1,
       mode: search.mode === "reading" ? "reading" : "verses",
+      filter,
     }
   },
   loader: async ({ params }) => {
@@ -104,16 +112,58 @@ function SurahReading() {
   const queryClient = useQueryClient()
   const { data: session } = useSession()
   const isAuthenticated = !!session?.user
+  const { showSuccess, showError } = useToast()
 
   // View mode state
   const viewMode = search.mode || "verses"
   const isReadingMode = viewMode === "reading"
 
+  // Filter state
+  const currentFilter = search.filter || "all"
+
   // Pagination state
   const currentPage = search.page || 1
-  const totalPages = Math.ceil(surah.verses_count / VERSES_PER_PAGE)
 
-  // Pagination handlers - defined BEFORE touch handlers that use them
+  // Query for progress
+  const { data: progressResponse } = useQuery({
+    queryKey: ["surah-progress", surah.id],
+    queryFn: () => getSurahProgressFn({ data: { surahNumber: surah.id } }),
+    enabled: isAuthenticated,
+    initialData: { progress: progressData },
+  })
+
+  const progress = progressResponse?.progress || []
+
+  // Create a map of ayah progress for quick lookup
+  const progressMap = new Map(
+    progress.map((p: { ayahNumber: string; status: string }) => [
+      parseInt(p.ayahNumber, 10),
+      p.status as ProgressStatus
+    ])
+  )
+
+  // Filter verses based on selected status (only in verses mode, not reading mode)
+  const shouldFilter = currentFilter !== "all" && !isReadingMode
+  const filteredVerses = shouldFilter
+    ? surah.verses.filter((verse) => {
+        const status = progressMap.get(verse.id)
+        // For "not_started", include verses with no progress record (undefined)
+        if (currentFilter === "not_started") {
+          return status === "not_started" || status === undefined
+        }
+        return status === currentFilter
+      })
+    : surah.verses
+
+  // Calculate verse range for current page (using filtered verses if filtering is active)
+  const versesForPage = shouldFilter || isReadingMode ? filteredVerses : surah.verses
+  const totalPages = Math.ceil(versesForPage.length / VERSES_PER_PAGE)
+
+  const startIndex = (currentPage - 1) * VERSES_PER_PAGE
+  const endIndex = startIndex + VERSES_PER_PAGE
+  const currentVerses = versesForPage.slice(startIndex, endIndex)
+
+  // Pagination handlers - defined AFTER totalPages is calculated
   const goToPage = useCallback((page: number) => {
     navigate({ search: { ...search, page } })
   }, [navigate, search])
@@ -185,11 +235,6 @@ function SurahReading() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [currentPage])
 
-  // Calculate verse range for current page
-  const startIndex = (currentPage - 1) * VERSES_PER_PAGE
-  const endIndex = startIndex + VERSES_PER_PAGE
-  const currentVerses = surah.verses.slice(startIndex, endIndex)
-
   // Show verse range info
   const startVerseNumber = startIndex + 1
   const endVerseNumber = Math.min(endIndex, surah.verses_count)
@@ -233,26 +278,13 @@ function SurahReading() {
   // Toggle view mode
   const toggleViewMode = () => {
     const newMode: "verses" | "reading" = isReadingMode ? "verses" : "reading"
-    navigate({ search: { ...search, mode: newMode } })
+    navigate({ search: { ...search, mode: newMode, page: 1 } })
   }
 
-  // Query for progress
-  const { data: progressResponse } = useQuery({
-    queryKey: ["surah-progress", surah.id],
-    queryFn: () => getSurahProgressFn({ data: { surahNumber: surah.id } }),
-    enabled: isAuthenticated,
-    initialData: { progress: progressData },
-  })
-
-  const progress = progressResponse?.progress || []
-
-  // Create a map of ayah progress for quick lookup
-  const progressMap = new Map(
-    progress.map((p: { ayahNumber: string; status: string }) => [
-      parseInt(p.ayahNumber, 10),
-      p.status as ProgressStatus
-    ])
-  )
+  // Set filter status
+  const setFilter = (filter: ProgressStatus | "all") => {
+    navigate({ search: { ...search, filter, page: 1 } })
+  }
 
   // Mutation for updating progress
   const updateProgressMutation = useMutation({
@@ -262,12 +294,18 @@ function SurahReading() {
           surahNumber: surah.id,
           ayahNumber,
           status,
+          userId: session?.user?.id, // Pass userId from client session
         },
       })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["surah-progress", surah.id] })
       queryClient.invalidateQueries({ queryKey: ["user-stats"] })
+    },
+    onError: (error: unknown) => {
+      console.error("Failed to update progress:", error)
+      const message = error instanceof Error ? error.message : "Failed to update progress. Please try again."
+      showError(message)
     },
   })
 
@@ -402,6 +440,43 @@ function SurahReading() {
               )}
             </button>
 
+            {/* Filter by Status (only show in verses mode and authenticated) */}
+            {!isReadingMode && isAuthenticated && (
+              <div className="mt-3 md:mt-4">
+                <label className="block text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2">Filter by status:</label>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <button
+                    onClick={() => setFilter("all")}
+                    className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
+                      currentFilter === "all"
+                        ? "bg-slate-800 dark:bg-slate-600 text-white"
+                        : "bg-slate-100 dark:bg-slate-700/30 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700/50"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {PROGRESS_STATUS.map((status) => (
+                    <button
+                      key={status.value}
+                      onClick={() => setFilter(status.value)}
+                      className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
+                        currentFilter === status.value
+                          ? `${status.bgColor} ${status.color}`
+                          : "bg-slate-100 dark:bg-slate-700/30 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700/50"
+                      }`}
+                    >
+                      {status.label}
+                    </button>
+                  ))}
+                </div>
+                {shouldFilter && (
+                  <p className="text-xs text-cyan-600 dark:text-cyan-400 mt-2">
+                    Showing {filteredVerses.length} {filteredVerses.length === 1 ? "verse" : "verses"}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Auth hint for progress tracking */}
             {!isAuthenticated && (
               <div className="mt-4 md:mt-6 text-xs md:text-sm text-gray-600 dark:text-gray-500">
@@ -492,8 +567,9 @@ function SurahReading() {
         ) : (
           // Verses Mode - Individual cards
           <div className="space-y-4 md:space-y-6">
-            {currentVerses.map((verse, index) => {
-              const verseNumber = index + 1 + startIndex
+            {currentVerses.map((verse) => {
+              // Use verse.id as the actual verse number (ayah number) from the Quran API
+              const verseNumber = verse.id
               const status = progressMap.get(verseNumber) || "not_started"
               const statusConfig = PROGRESS_STATUS.find((s) => s.value === status) || PROGRESS_STATUS[0]
 

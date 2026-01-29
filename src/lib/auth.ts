@@ -1,12 +1,13 @@
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { tanstackStartCookies } from "better-auth/tanstack-start"
 import { db } from "@/db/index"
 import * as schema from "@/db/schema"
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
   database: drizzleAdapter(db, {
-    provider: "postgresql",
+    provider: "pg",
     schema: {
       user: schema.user,
       session: schema.session,
@@ -17,10 +18,10 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
-    sendResetPassword: async ({ user, url }) => {
+    sendResetPassword: async ({ url }: { url: string }) => {
       console.log("Password reset link:", url)
     },
-    sendVerificationEmail: async ({ user, url }) => {
+    sendVerificationEmail: async ({ url }: { url: string }) => {
       console.log("Verification link:", url)
     },
   },
@@ -53,7 +54,8 @@ export const auth = betterAuth({
       enabled: false,
     },
   },
+  plugins: [tanstackStartCookies()],
 })
 
 export type Session = typeof auth.$Infer.Session
-export type User = typeof auth.$Infer.User
+export type User = typeof auth.$Infer.Session.user

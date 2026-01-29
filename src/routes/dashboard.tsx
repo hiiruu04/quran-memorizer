@@ -8,7 +8,7 @@ export const Route = createFileRoute("/dashboard")({
   loader: async () => {
     try {
       const stats = await getUserStats()
-      return { statsData: stats.data?.stats || null }
+      return { statsData: stats.stats || null }
     } catch {
       return { statsData: null }
     }
@@ -127,7 +127,7 @@ function DashboardPage() {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
           <Link
-            to="/quran/1"
+            to="/quran"
             className="group bg-white dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl p-4 md:p-6 hover:border-cyan-500/50 transition-all duration-300 active:scale-[0.98] touch-manipulation shadow-sm"
           >
             <div className="flex items-center gap-3 md:gap-4">

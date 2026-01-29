@@ -6,6 +6,7 @@ import { useState } from 'react'
 
 import Header from '../components/Header'
 import { ThemeProvider } from '../lib/theme-context'
+import { ToastProvider } from '../components/ui/toast'
 
 import appCss from '../styles.css?url'
 
@@ -57,21 +58,23 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider>
-            <Header />
-            {children}
-            <TanStackDevtools
-              config={{
-                position: 'bottom-right',
-              }}
-              plugins={[
-                {
-                  name: 'Tanstack Router',
-                  render: <TanStackRouterDevtoolsPanel />,
-                },
-              ]}
-            />
-          </ThemeProvider>
+          <ToastProvider>
+            <ThemeProvider>
+              <Header />
+              {children}
+              <TanStackDevtools
+                config={{
+                  position: 'bottom-right',
+                }}
+                plugins={[
+                  {
+                    name: 'Tanstack Router',
+                    render: <TanStackRouterDevtoolsPanel />,
+                  },
+                ]}
+              />
+            </ThemeProvider>
+          </ToastProvider>
         </QueryClientProvider>
         <Scripts />
       </body>

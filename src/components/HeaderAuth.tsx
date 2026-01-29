@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 
 interface User {
   id: string
