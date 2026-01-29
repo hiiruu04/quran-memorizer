@@ -105,39 +105,29 @@ export async function updateProgress(
   ayahNumber: number,
   status: ProgressStatus
 ): Promise<Progress> {
-  console.log("DEBUG: updateProgress called:", { userId, surahNumber, ayahNumber, status })
-
-  try {
-    // First try to update existing record
-    const result = await db
-      .update(progress)
-      .set({
-        status,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(progress.userId, userId),
-          eq(progress.surahNumber, surahNumber.toString()),
-          eq(progress.ayahNumber, ayahNumber.toString())
-        )
+  // First try to update existing record
+  const result = await db
+    .update(progress)
+    .set({
+      status,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(progress.userId, userId),
+        eq(progress.surahNumber, surahNumber.toString()),
+        eq(progress.ayahNumber, ayahNumber.toString())
       )
-      .returning()
+    )
+    .returning()
 
-    if (result[0]) {
-      console.log("DEBUG: Updated existing progress:", result[0])
-      return result[0]
-    }
-
-    // If no record exists, create one
-    console.log("DEBUG: No existing record, creating new one")
-    const newProgress = await createProgress({ userId, surahNumber, ayahNumber, status })
-    console.log("DEBUG: Created new progress:", newProgress)
-    return newProgress
-  } catch (error) {
-    console.error("DEBUG: Error in updateProgress:", error)
-    throw error
+  if (result[0]) {
+    return result[0]
   }
+
+  // If no record exists, create one
+  const newProgress = await createProgress({ userId, surahNumber, ayahNumber, status })
+  return newProgress
 }
 
 /**

@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Circle, CircleDot, CheckCircle2, Clock } from "lucide-react"
 import type { ProgressStatus } from "@/db/queries"
 import React, { useRef, useEffect, useState, useCallback } from "react"
-import { useToast } from "@/components/ui/toast"
+import { useToast } from "@/components/ui/use-toast"
 
 // Verses per page
 const VERSES_PER_PAGE = 10
@@ -112,7 +112,7 @@ function SurahReading() {
   const queryClient = useQueryClient()
   const { data: session } = useSession()
   const isAuthenticated = !!session?.user
-  const { showSuccess, showError } = useToast()
+  const { showError } = useToast()
 
   // View mode state
   const viewMode = search.mode || "verses"
@@ -303,7 +303,6 @@ function SurahReading() {
       queryClient.invalidateQueries({ queryKey: ["user-stats"] })
     },
     onError: (error: unknown) => {
-      console.error("Failed to update progress:", error)
       const message = error instanceof Error ? error.message : "Failed to update progress. Please try again."
       showError(message)
     },
@@ -312,7 +311,7 @@ function SurahReading() {
   const handleStatusClick = (ayahNumber: number, currentStatus: ProgressStatus) => {
     if (!isAuthenticated) {
       // Redirect to login or show a modal
-      window.location.href = `/auth/login?redirect=/quran/${surah.id}`
+      navigate({ to: "/auth/login", search: { redirect: `/quran/${surah.id}` } })
       return
     }
 

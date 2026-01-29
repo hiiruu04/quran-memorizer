@@ -3,7 +3,7 @@ import { HeaderAuth } from './HeaderAuth'
 import { signOut } from '@/lib/auth-client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useTheme } from '@/lib/theme-context'
+import { useTheme } from '@/lib/use-theme'
 import { Moon, Sun } from 'lucide-react'
 
 export default function Header() {

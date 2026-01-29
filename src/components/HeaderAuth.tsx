@@ -80,6 +80,8 @@ export function HeaderAuth(props: HeaderAuthProps) {
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
+    // SSR hydration pattern: show skeleton until client is mounted
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true)
   }, [])
 

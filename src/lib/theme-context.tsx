@@ -1,23 +1,17 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { useEffect, useState, ReactNode } from 'react'
+import { ThemeContext } from './theme-context-defs'
 
-type Theme = 'dark' | 'light'
-
-interface ThemeContextType {
-  theme: Theme
-  toggleTheme: () => void
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
+export { ThemeContext } from './theme-context-defs'
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     // During SSR, just return default
     if (typeof window === 'undefined') {
       return 'dark'
     }
 
     // Check localStorage first (only runs on client)
-    const stored = localStorage.getItem('theme') as Theme | null
+    const stored = localStorage.getItem('theme') as 'dark' | 'light' | null
     if (stored) return stored
 
     // Check system preference
@@ -44,12 +38,4 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       {children}
     </ThemeContext.Provider>
   )
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext)
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider')
-  }
-  return context
 }

@@ -22,27 +22,20 @@ import {
 async function getSession() {
   try {
     const request = getRequest()
-    console.log("DEBUG: getRequest() returned:", request instanceof Request ? "Request object" : typeof request)
 
     if (request instanceof Request) {
       const headers = request.headers
-      console.log("DEBUG: Request headers:", Array.from(headers.entries()).filter(h => h[0].toLowerCase().includes('cookie') || h[0].toLowerCase().includes('auth')))
-
       const session = await auth.api.getSession({
-        headers: headers as any,
+        headers: headers as Headers,
       })
-      console.log("DEBUG: Session result:", session ? { user: { id: session.user?.id, email: session.user?.email } } : "No session")
       return session
     }
 
-    console.log("DEBUG: Request is not a Request object, creating empty headers")
     const session = await auth.api.getSession({
-      headers: new Headers() as any,
+      headers: new Headers() as Headers,
     })
-    console.log("DEBUG: Session result (empty headers):", session ? { user: { id: session.user?.id, email: session.user?.email } } : "No session")
     return session
-  } catch (error) {
-    console.error("Error getting session:", error)
+  } catch {
     return null
   }
 }
@@ -87,8 +80,6 @@ export const updateAyahProgress = createServerFn({ method: "POST" })
     (input: { surahNumber: number; ayahNumber: number; status: ProgressStatus; userId?: string }) => input
   )
   .handler(async ({ data }) => {
-    console.log("DEBUG: updateAyahProgress called with:", JSON.stringify(data))
-
     // Try to get userId from request first (for security), fall back to provided userId
     let userId = data.userId
 
@@ -98,36 +89,16 @@ export const updateAyahProgress = createServerFn({ method: "POST" })
     }
 
     if (!userId) {
-      console.error("DEBUG: No user ID found (neither from request nor from client)")
       throw new Error("Unauthorized")
     }
 
-    console.log("DEBUG: User authenticated:", userId)
-    console.log("DEBUG: About to call updateProgress with:", {
+    const progress = await updateProgress(
       userId,
-      surahNumber: data.surahNumber,
-      ayahNumber: data.ayahNumber,
-      status: data.status,
-    })
-
-    try {
-      const progress = await updateProgress(
-        userId,
-        data.surahNumber,
-        data.ayahNumber,
-        data.status
-      )
-      console.log("DEBUG: Progress saved successfully:", JSON.stringify(progress))
-      return { progress }
-    } catch (error) {
-      console.error("DEBUG: Error calling updateProgress:", error)
-      console.error("DEBUG: Error details:", {
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        name: error instanceof Error ? error.name : undefined,
-      })
-      throw error
-    }
+      data.surahNumber,
+      data.ayahNumber,
+      data.status
+    )
+    return { progress }
   })
 
 /**

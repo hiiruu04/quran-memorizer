@@ -18,11 +18,11 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
-    sendResetPassword: async ({ url }: { url: string }) => {
-      console.log("Password reset link:", url)
+    sendResetPassword: async () => {
+      // TODO: implement email sending
     },
-    sendVerificationEmail: async ({ url }: { url: string }) => {
-      console.log("Verification link:", url)
+    sendVerificationEmail: async () => {
+      // TODO: implement email sending
     },
   },
   socialLogin: {

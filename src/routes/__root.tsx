@@ -6,7 +6,7 @@ import { useState } from 'react'
 
 import Header from '../components/Header'
 import { ThemeProvider } from '../lib/theme-context'
-import { ToastProvider } from '../components/ui/toast'
+import { ToastProvider } from '../components/ui/toast-context'
 
 import appCss from '../styles.css?url'
 

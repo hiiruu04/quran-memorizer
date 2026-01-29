@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 
@@ -17,7 +17,12 @@ const loggedServerFunction = createServerFn({ method: "GET" }).middleware([
 
 const TODOS_FILE = 'todos.json'
 
-async function readTodos() {
+interface Todo {
+  id: number
+  name: string
+}
+
+async function readTodos(): Promise<Todo[]> {
   return JSON.parse(
     await fs.promises.readFile(TODOS_FILE, 'utf-8').catch(() =>
       JSON.stringify(
@@ -52,15 +57,15 @@ export const Route = createFileRoute('/demo/start/server-funcs')({
 
 function Home() {
   const router = useRouter()
-  let todos = Route.useLoaderData()
+  const todos = Route.useLoaderData()
 
   const [todo, setTodo] = useState('')
 
-  const submitTodo = useCallback(async () => {
-    todos = await addTodo({ data: todo })
+  const submitTodo = async () => {
+    await addTodo({ data: todo })
     setTodo('')
     router.invalidate()
-  }, [addTodo, todo])
+  }
 
   return (
     <div

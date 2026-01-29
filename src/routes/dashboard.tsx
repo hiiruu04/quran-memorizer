@@ -6,12 +6,9 @@ import { BookOpen, Flame, Target } from "lucide-react"
 
 export const Route = createFileRoute("/dashboard")({
   loader: async () => {
-    try {
-      const stats = await getUserStats()
-      return { statsData: stats.stats || null }
-    } catch {
-      return { statsData: null }
-    }
+    // Don't call server function in loader - let client-side useQuery handle it
+    // to avoid abort errors during SSR
+    return { statsData: null }
   },
   component: DashboardPage,
 })
