@@ -3,7 +3,7 @@
  */
 
 import { createServerFn } from "@tanstack/react-start"
-import { getSession } from "@/lib/auth-client"
+import { auth } from "@/lib/auth"
 import type { ProgressStatus } from "@/db/queries"
 import {
   getProgress,
@@ -15,12 +15,22 @@ import {
 } from "@/db/queries"
 
 /**
+ * Helper function to get session from request headers
+ */
+async function getSessionFromHeaders(headers: Headers) {
+  const session = await auth.api.getSession({
+    headers,
+  })
+  return session
+}
+
+/**
  * Get progress for a specific ayah
  */
 export const getAyahProgress = createServerFn({ method: "GET" })
   .inputValidator((input: { surahNumber: number; ayahNumber: number }) => input)
-  .handler(async ({ data }) => {
-    const session = await getSession()
+  .handler(async ({ data, request }) => {
+    const session = await getSessionFromHeaders(request.headers)
 
     if (!session?.user?.id) {
       throw new Error("Unauthorized")
@@ -35,8 +45,8 @@ export const getAyahProgress = createServerFn({ method: "GET" })
  */
 export const getSurahProgressFn = createServerFn({ method: "GET" })
   .inputValidator((input: { surahNumber: number }) => input)
-  .handler(async ({ data }) => {
-    const session = await getSession()
+  .handler(async ({ data, request }) => {
+    const session = await getSessionFromHeaders(request.headers)
 
     if (!session?.user?.id) {
       throw new Error("Unauthorized")
@@ -53,8 +63,8 @@ export const updateAyahProgress = createServerFn({ method: "POST" })
   .inputValidator(
     (input: { surahNumber: number; ayahNumber: number; status: ProgressStatus }) => input
   )
-  .handler(async ({ data }) => {
-    const session = await getSession()
+  .handler(async ({ data, request }) => {
+    const session = await getSessionFromHeaders(request.headers)
 
     if (!session?.user?.id) {
       throw new Error("Unauthorized")
@@ -74,8 +84,8 @@ export const updateAyahProgress = createServerFn({ method: "POST" })
  * Get all progress for the current user
  */
 export const getAllUserProgress = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const session = await getSession()
+  .handler(async ({ request }) => {
+    const session = await getSessionFromHeaders(request.headers)
 
     if (!session?.user?.id) {
       throw new Error("Unauthorized")
@@ -89,8 +99,8 @@ export const getAllUserProgress = createServerFn({ method: "GET" })
  * Get user progress statistics
  */
 export const getUserStats = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const session = await getSession()
+  .handler(async ({ request }) => {
+    const session = await getSessionFromHeaders(request.headers)
 
     if (!session?.user?.id) {
       throw new Error("Unauthorized")
@@ -109,8 +119,8 @@ export const batchUpdateAyahProgress = createServerFn({ method: "POST" })
       updates: Array<{ surahNumber: number; ayahNumber: number; status: ProgressStatus }>
     }) => input
   )
-  .handler(async ({ data }) => {
-    const session = await getSession()
+  .handler(async ({ data, request }) => {
+    const session = await getSessionFromHeaders(request.headers)
 
     if (!session?.user?.id) {
       throw new Error("Unauthorized")
