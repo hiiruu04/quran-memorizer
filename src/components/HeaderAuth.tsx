@@ -45,25 +45,17 @@ function HeaderAuthClient({ onLogout }: HeaderAuthProps) {
 
   if (session?.user) {
     return (
-      <>
-        <Link
-          to="/dashboard"
-          className="text-gray-300 hover:text-white transition-colors"
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-gray-400">
+          {session.user.name || session.user.email}
+        </span>
+        <button
+          onClick={onLogout}
+          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
         >
-          Dashboard
-        </Link>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-400">
-            {session.user.name || session.user.email}
-          </span>
-          <button
-            onClick={onLogout}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
-          >
-            Sign Out
-          </button>
-        </div>
-      </>
+          Sign Out
+        </button>
+      </div>
     )
   }
 

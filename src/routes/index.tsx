@@ -1,9 +1,25 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, Navigate } from '@tanstack/react-router'
 import { BookOpen, Brain, TrendingUp } from 'lucide-react'
+import { useSession } from '@/lib/auth-client'
 
 export const Route = createFileRoute('/')({ component: App })
 
 function App() {
+  const { data: session, isPending } = useSession()
+
+  // Redirect to dashboard if authenticated
+  if (!isPending && session?.user) {
+    return <Navigate to="/dashboard" />
+  }
+
+  // Show loading while checking session
+  if (isPending) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    )
+  }
   const features = [
     {
       icon: <BookOpen className="w-12 h-12 text-cyan-400" />,
