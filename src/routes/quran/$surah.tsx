@@ -8,6 +8,8 @@ import { Circle, CircleDot, CheckCircle2, Clock } from "lucide-react"
 import type { ProgressStatus } from "@/db/queries"
 import React, { useRef, useEffect, useState, useCallback } from "react"
 import { useToast } from "@/components/ui/use-toast"
+import { useAudioPlayer } from "@/hooks/use-audio-player"
+import { VerseAudioPlayer, FullAudioPlayer, AudioProgressBar } from "@/components/AudioPlayer"
 
 // Verses per page
 const VERSES_PER_PAGE = 10
@@ -118,11 +120,20 @@ function SurahReading() {
   const viewMode = search.mode || "verses"
   const isReadingMode = viewMode === "reading"
 
+  // Audio player state
+  const audioPlayer = useAudioPlayer({
+    totalVerses: surah.verses_count,
+  })
+
   // Filter state
   const currentFilter = search.filter || "all"
 
   // Pagination state
   const currentPage = search.page || 1
+
+  // Audio-related state
+  const [lastTapTime, setLastTapTime] = useState(0)
+  const [lastTapVerse, setLastTapVerse] = useState<number | null>(null)
 
   // Query for progress
   const { data: progressResponse } = useQuery({
@@ -136,8 +147,8 @@ function SurahReading() {
 
   // Create a map of ayah progress for quick lookup
   const progressMap = new Map(
-    progress.map((p: { ayahNumber: string; status: string }) => [
-      parseInt(p.ayahNumber, 10),
+    progress.map((p: { verse: string; status: string }) => [
+      parseInt(p.verse, 10),
       p.status as ProgressStatus
     ])
   )
@@ -230,6 +241,22 @@ function SurahReading() {
     setSwipeProgress(0)
   }
 
+  // Double-tap handler for playing ayahs
+  const handleVerseTap = useCallback((verse: number) => {
+    const now = Date.now()
+    const tapThreshold = 300 // ms between taps to consider it a double-tap
+
+    if (lastTapVerse === verse && now - lastTapTime < tapThreshold) {
+      // Double tap detected - play this ayah
+      audioPlayer.play(surah.id, verse)
+      setLastTapTime(0)
+      setLastTapVerse(null)
+    } else {
+      setLastTapTime(now)
+      setLastTapVerse(verse)
+    }
+  }, [lastTapTime, lastTapVerse, surah.id, audioPlayer])
+
   // Scroll to top when page changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -288,11 +315,11 @@ function SurahReading() {
 
   // Mutation for updating progress
   const updateProgressMutation = useMutation({
-    mutationFn: async ({ ayahNumber, status }: { ayahNumber: number; status: ProgressStatus }) => {
+    mutationFn: async ({ verse, status }: { verse: number; status: ProgressStatus }) => {
       return updateAyahProgress({
         data: {
           surahNumber: surah.id,
-          ayahNumber,
+          verse,
           status,
           userId: session?.user?.id, // Pass userId from client session
         },
@@ -308,7 +335,7 @@ function SurahReading() {
     },
   })
 
-  const handleStatusClick = (ayahNumber: number, currentStatus: ProgressStatus) => {
+  const handleStatusClick = (verse: number, currentStatus: ProgressStatus) => {
     if (!isAuthenticated) {
       // Redirect to login or show a modal
       navigate({ to: "/auth/login", search: { redirect: `/quran/${surah.id}` } })
@@ -316,7 +343,7 @@ function SurahReading() {
     }
 
     const nextStatus = getNextStatus(currentStatus)
-    updateProgressMutation.mutate({ ayahNumber, status: nextStatus })
+    updateProgressMutation.mutate({ verse, status: nextStatus })
   }
 
   const currentIndex = surah.id - 1
@@ -525,7 +552,7 @@ function SurahReading() {
               style={{ fontFamily: "'Amiri', 'Scheherazade New', serif" }}
             >
               {currentVerses.map((verse, index) => {
-                const verseNumber = index + 1 + startIndex
+                const verseNumber = verse.verse_number ?? (index + 1 + startIndex)
                 const isFirst = index === 0
                 return (
                   <React.Fragment key={verse.id}>
@@ -546,7 +573,7 @@ function SurahReading() {
             {/* Translations - Each verse with number */}
             <div className="space-y-4 md:space-y-6">
               {currentVerses.map((verse, index) => {
-                const verseNumber = index + 1 + startIndex
+                const verseNumber = verse.verse_number ?? (index + 1 + startIndex)
                 return (
                   <div key={`trans-${verse.id}`} className="text-base md:text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
                     <span className="text-cyan-600 dark:text-cyan-400 font-semibold">[{verseNumber}]</span>{" "}
@@ -566,9 +593,11 @@ function SurahReading() {
         ) : (
           // Verses Mode - Individual cards
           <div className="space-y-4 md:space-y-6">
-            {currentVerses.map((verse) => {
-              // Use verse.id as the actual verse number (ayah number) from the Quran API
-              const verseNumber = verse.id
+            {currentVerses.map((verse, index) => {
+              // Use verse.verse_number for the verse number within this surah (1-286)
+              // NOT verse.id which is a global unique identifier across entire Quran
+              // If verse_number is null, calculate from index in filtered array + page offset
+              const verseNumber = verse.verse_number ?? (index + 1 + startIndex)
               const status = progressMap.get(verseNumber) || "not_started"
               const statusConfig = PROGRESS_STATUS.find((s) => s.value === status) || PROGRESS_STATUS[0]
 
@@ -614,6 +643,32 @@ function SurahReading() {
 
                       {/* Progress Status & Controls */}
                       <div className="mt-3 md:mt-4 flex flex-wrap items-center gap-2 md:gap-4">
+                        {/* Audio Player - Per Verse */}
+                        <div
+                          onTouchEnd={() => handleVerseTap(verseNumber)}
+                          className="cursor-pointer"
+                        >
+                          <VerseAudioPlayer
+                            isPlaying={audioPlayer.currentSurah === surah.id && audioPlayer.currentAyah === verseNumber && audioPlayer.isPlaying()}
+                            isLoading={audioPlayer.currentSurah === surah.id && audioPlayer.currentAyah === verseNumber && audioPlayer.playbackState === 'loading'}
+                            onPlay={() => audioPlayer.play(surah.id, verseNumber)}
+                            onPause={audioPlayer.pause}
+                            compact
+                          />
+                        </div>
+
+                        {/* Progress bar for currently playing verse */}
+                        {audioPlayer.currentSurah === surah.id && audioPlayer.currentAyah === verseNumber && (
+                          <div className="flex-1 min-w-[120px] sm:min-w-[200px]">
+                            <AudioProgressBar
+                              currentTime={audioPlayer.currentTime}
+                              duration={audioPlayer.duration}
+                              onSeek={audioPlayer.seek}
+                              showTime={false}
+                            />
+                          </div>
+                        )}
+
                         {/* Additional verse info */}
                         {verse.juz_number !== null && (
                           <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-600 dark:text-gray-500">
@@ -791,6 +846,34 @@ function SurahReading() {
           )}
         </div>
       </main>
+
+      {/* Full Audio Player Bar (shows when audio is active) */}
+      {(audioPlayer.playbackState === 'playing' ||
+        audioPlayer.playbackState === 'paused' ||
+        audioPlayer.playbackState === 'loading') && (
+        <FullAudioPlayer
+          isPlaying={audioPlayer.isPlaying()}
+          isLoading={audioPlayer.playbackState === 'loading'}
+          currentTime={audioPlayer.currentTime}
+          duration={audioPlayer.duration}
+          volume={audioPlayer.volume}
+          speed={audioPlayer.speed}
+          repeatMode={audioPlayer.repeatMode}
+          surahNumber={audioPlayer.currentSurah}
+          verse={audioPlayer.currentAyah}
+          reciterId={audioPlayer.reciterId}
+          onTogglePlayPause={audioPlayer.togglePlayPause}
+          onSeek={audioPlayer.seek}
+          onVolumeChange={audioPlayer.setVolume}
+          onSpeedChange={audioPlayer.setSpeed}
+          onRepeatModeChange={audioPlayer.setRepeatMode}
+          onReciterChange={audioPlayer.setReciterId}
+          onPrevious={() => audioPlayer.currentAyah && audioPlayer.currentAyah > 1 && audioPlayer.play(audioPlayer.currentSurah!, audioPlayer.currentAyah - 1)}
+          onNext={() => audioPlayer.currentSurah && audioPlayer.currentAyah && audioPlayer.currentAyah < surah.verses_count && audioPlayer.play(audioPlayer.currentSurah, audioPlayer.currentAyah + 1)}
+          hasPrevious={audioPlayer.currentAyah !== null && audioPlayer.currentAyah > 1}
+          hasNext={audioPlayer.currentAyah !== null && audioPlayer.currentAyah < surah.verses_count}
+        />
+      )}
     </div>
   )
 }
